@@ -5,6 +5,7 @@ import org.example.model.Client;
 import org.example.service.ClientService;
 import org.example.view.ClientView;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,10 +20,26 @@ public class ClientController {
             ctx.html(ClientView.renderList(service.getClients())));
         app.get("/clients/new",ctx->
                 ctx.html(ClientView.renderForm(new HashMap<>())));
-        app.post("/clients",ctx->{
+        app.post("/clients", ctx -> {
             String name = ctx.formParam("name");
             String email = ctx.formParam("email");
-            service.createClient(new Client(name,email));
+
+            List<String> errors = new ArrayList<>();
+            if (name == null || name.isBlank() || name == "") {
+                errors.add("Nome não pode ser vazio");
+            }
+            if (email == null || !email.contains("@")) {
+                errors.add("Email inválido");
+            }
+            if (!errors.isEmpty()) {
+                ctx.html(ClientView.renderForm(Map.of(
+                        "errors", errors,
+                        "name", name,
+                        "email", email
+                )));
+                return;
+            }
+            service.createClient(new Client(name, email));
             ctx.redirect("/clients");
         });
         app.get("/clients/edit/{id}",ctx->{
@@ -39,11 +56,28 @@ public class ClientController {
             }
         });
 
-        app.post("clients/edit/{id}",ctx->{
-            int id = ctx.pathParamAsClass("id",Integer.class).get();
+        app.post("clients/edit/{id}", ctx -> {
+            int id = ctx.pathParamAsClass("id", Integer.class).get();
             String name = ctx.formParam("name");
             String email = ctx.formParam("email");
-            service.updateClient(new Client(id,name,email));
+
+            List<String> errors = new ArrayList<>();
+            if (name == null || name.isBlank() || name == "")  {
+                errors.add("Nome não pode ser vazio");
+            }
+            if (email == null || !email.contains("@")) {
+                errors.add("Email inválido");
+            }
+            if (!errors.isEmpty()) {
+                ctx.html(ClientView.renderForm(Map.of(
+                        "id", id,
+                        "errors", errors,
+                        "name", name,
+                        "email", email
+                )));
+                return;
+            }
+            service.updateClient(new Client(id, name, email));
             ctx.redirect("/clients");
         });
 

@@ -4,31 +4,28 @@ import io.javalin.Javalin;
 import org.example.controller.ClientController;
 import org.example.view.pages.CreateClientPage;
 import org.example.view.pages.ListPage;
-import org.example.view.util.Config;
 import org.example.view.util.DriverFactory;
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // permite @BeforeAll e @AfterAll não estáticos
-public class SeleniumTest {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class ClientViewTest {
 
     private Javalin app;
     private WebDriver driver;
     private ListPage listPage;
     private ClientController clientController;
 
-    private static final int PORT = 7000; // porta fixa para todos os testes
+    private static final int PORT = 7000;
     private static final String BASE_URL = "http://localhost:" + PORT + "/clients";
 
     @BeforeAll
     public void setupAll() {
-        // Inicializa Javalin apenas uma vez
         app = Javalin.create(config -> {}).start(PORT);
         clientController = new ClientController(app);
 
-        // Inicializa WebDriver
         driver = DriverFactory.createDriver();
         driver.manage().window().maximize();
     }
@@ -41,7 +38,6 @@ public class SeleniumTest {
 
     @BeforeEach
     public void beforeEachTest() {
-        // Sempre abre a página inicial antes de cada teste
         driver.get(BASE_URL);
         listPage = new ListPage(driver);
     }
@@ -63,11 +59,26 @@ public class SeleniumTest {
         createClientPage.enterEmail("augustocedro@example.com");
         createClientPage.submitCreateClientButton();
 
-        // Verifica se voltou para a lista de clientes
         String expectedUrl = BASE_URL;
         String actualUrl = driver.getCurrentUrl();
         assertEquals(expectedUrl, actualUrl);
     }
+    @Test
+    public void createInvalidClientTest() {
+        listPage.goToCreateClientPage();
 
-    // Você pode adicionar novos testes sem se preocupar com porta ou servidor
+        CreateClientPage page = new CreateClientPage(driver);
+
+        page.enterName("");
+        page.enterEmail("emailErrado");
+        page.submitCreateClientButton();
+
+
+        String errors = page.getErrors();
+
+        Assertions.assertTrue(errors.contains("Nome não pode ser vazio"));
+        Assertions.assertTrue(errors.contains("Email inválido"));
+    }
+
+
 }
